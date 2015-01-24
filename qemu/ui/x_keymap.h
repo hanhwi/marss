@@ -29,4 +29,6 @@ uint8_t translate_xfree86_keycode(const int key);
 
 uint8_t translate_evdev_keycode(const int key);
 
+uint8_t translate_xquartz_keycode(const int key);
+
 #endif

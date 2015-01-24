@@ -265,6 +265,42 @@ static uint8_t sdl_keyevent_to_keycode(const SDL_KeyboardEvent *ev)
 #if defined(SDL_VIDEO_DRIVER_X11)
 #include <X11/XKBlib.h>
 
+/* I borrowed most of this function from vncdisplaykeymap.c of GTK-VNC, under the terms:
+ *
+ * Copyright (C) 2008  Anthony Liguori <anthony@codemonkey.ws>
+ * Copyright (C) 2009-2010 Daniel P. Berrange <dan@berrange.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ */
+static int check_for_xquartz(void){
+  int num_extensions;
+  int i;
+  int cmp = 0;
+  SDL_SysWMinfo info;
+  char **extensions;
+
+  SDL_VERSION(&info.version);
+  if (!SDL_GetWMInfo(&info))
+    return 0;
+
+  extensions = XListExtensions(info.info.x11.display, &num_extensions);
+
+  for (i = 0; extensions && i < num_extensions; ++i)
+    if (strcmp(extensions[i], "Apple-WM") == 0 ||
+	strcmp(extensions[i], "Apple-DRI") == 0){
+      cmp = 1;
+      break;
+    }
+  
+  if (extensions)
+    XFreeExtensionList(extensions);
+
+  return cmp;
+}
+
 static int check_for_evdev(void)
 {
     SDL_SysWMinfo info;
@@ -283,7 +319,8 @@ static int check_for_evdev(void)
         keycodes = XGetAtomName(info.info.x11.display, desc->names->keycodes);
         if (keycodes == NULL) {
             fprintf(stderr, "could not lookup keycode name\n");
-        } else if (strstart(keycodes, "evdev", NULL)) {
+        } 
+	else if (strstart(keycodes, "evdev", NULL)) {
             has_evdev = 1;
         } else if (!strstart(keycodes, "xfree86", NULL)) {
             fprintf(stderr, "unknown keycodes `%s', please report to "
@@ -310,29 +347,39 @@ static uint8_t sdl_keyevent_to_keycode(const SDL_KeyboardEvent *ev)
 {
     int keycode;
     static int has_evdev = -1;
+    static int has_xquartz = -1;
 
-    if (has_evdev == -1)
-        has_evdev = check_for_evdev();
+    if (has_xquartz == -1)
+       has_xquartz = check_for_xquartz();
+
+    if (!has_xquartz && has_evdev == -1)
+      has_evdev = check_for_evdev();
 
     keycode = ev->keysym.scancode;
 
-    if (keycode < 9) {
+    if (has_xquartz){
+      keycode = translate_xquartz_keycode(keycode);
+    }
+    else {
+      if (keycode < 9) {
         keycode = 0;
-    } else if (keycode < 97) {
+      } else if (keycode < 97) {
         keycode -= 8; /* just an offset */
-    } else if (keycode < 158) {
+      } else if (keycode < 158) {
         /* use conversion table */
         if (has_evdev)
-            keycode = translate_evdev_keycode(keycode - 97);
+	  keycode = translate_evdev_keycode(keycode - 97);
         else
-            keycode = translate_xfree86_keycode(keycode - 97);
-    } else if (keycode == 208) { /* Hiragana_Katakana */
+	  keycode = translate_xfree86_keycode(keycode - 97);
+      } else if (keycode == 208) { /* Hiragana_Katakana */
         keycode = 0x70;
-    } else if (keycode == 211) { /* backslash */
+      } else if (keycode == 211) { /* backslash */
         keycode = 0x73;
-    } else {
+      } else {
         keycode = 0;
+      }
     }
+
     return keycode;
 }
 
