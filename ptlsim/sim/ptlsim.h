@@ -217,6 +217,14 @@ struct PTLsimConfig {
 
   bool verify_cache;
 
+  // Instruction trace options
+  stringbuf trace_file;
+  bool trace_print_uop;
+  bool trace_print_mop;
+  W64 start_trace_at_iteration;
+  W64 start_trace_at_rip;
+  bool trace_user_only;
+
   // Statistics Database
   stringbuf stats_filename;
   stringbuf yaml_stats_filename;
@@ -290,7 +298,6 @@ struct PTLsimConfig {
   stringbuf simpoint_chk_name;
 
   void reset();
-
 };
 
 extern ConfigurationParser<PTLsimConfig> config;
@@ -298,6 +305,7 @@ extern ConfigurationParser<PTLsimConfig> config;
 ostream& operator <<(ostream& os, const PTLsimConfig& config);
 
 extern bool logenable;
+extern bool traceenable;
 
 #ifdef DISABLE_LOGGING
 #define logable(l) (0)

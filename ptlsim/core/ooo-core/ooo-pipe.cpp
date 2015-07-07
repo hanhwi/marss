@@ -548,6 +548,13 @@ bool ThreadContext::fetch() {
             logenable = 1;
         }
 
+        if unlikely (!traceenable && (fetchrip.rip == config.start_trace_at_rip) && (fetchrip.rip != 0xffffffffffffffffULL)) {
+            config.start_trace_at_iteration = 0;
+            if (config.trace_file != "") // need to change
+                cerr << "Start tracing at 0x" << std::hex << config.start_trace_at_rip << std::dec << endl;
+            traceenable = 1;
+        }
+
         if unlikely ((!current_basic_block) || (current_basic_block_transop_index >= current_basic_block->count)) {
             if(logable(10))
                 ptl_logfile << "Trying to fech code from rip: ", fetchrip, endl;
@@ -671,6 +678,18 @@ bool ThreadContext::fetch() {
         transop.rip = fetchrip;
         transop.uuid = fetch_uuid++;
 
+        // Generate trace entry for fetch op
+        transop.trace_entry = tracer.alloc_new_entry();
+        if (transop.trace_entry){
+            if (transop.som)
+                transop.trace_entry->init(fetchrip.rip, (*current_basic_block->disasms)[(W64)fetchrip],
+                                          transop.som, transop.eom, true, transop.opcode);
+            else
+                transop.trace_entry->init(fetchrip.rip, "",
+                                          transop.som, transop.eom, true, transop.opcode);
+        }
+                
+
         if (isbranch(transop.opcode)) {
             transop.predinfo.uuid = transop.uuid;
             transop.predinfo.bptype =
@@ -793,7 +812,7 @@ BasicBlock* ThreadContext::fetch_or_translate_basic_block(const RIPVirtPhys& rvp
 
     return current_basic_block;
 }
-
+ 
 /**
  * @brief Allocate and Rename Stages
  */
@@ -2288,6 +2307,9 @@ int ReorderBufferEntry::commit() {
     total_uops_committed++;
     thread.thread_stats.commit.uops++;
     thread.total_uops_committed++;
+
+    // Print out trace
+    thread.tracer.print_until(uop.trace_entry, true);
 
     bool uop_is_eom = uop.eom;
     bool uop_is_barrier = isclass(uop.opcode, OPCLASS_BARRIER);

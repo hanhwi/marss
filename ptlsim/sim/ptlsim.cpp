@@ -52,6 +52,7 @@ ofstream ptl_rip_trace;
 ofstream trace_mem_logfile;
 ofstream yaml_stats_file;
 bool logenable = 0;
+bool traceenable = 0;
 W64 sim_cycle = 0;
 W64 unhalted_cycle_count = 0;
 W64 iterations = 0;
@@ -240,6 +241,14 @@ void ConfigurationParser<PTLsimConfig>::reset() {
   simpoint_file = "";
   simpoint_interval = 10e6;
   simpoint_chk_name = "simpoint";
+
+  // Trace 
+  trace_file = "";
+  trace_print_uop = true;
+  trace_print_mop = true;
+  start_trace_at_iteration = 0;
+  start_trace_at_rip = INVALIDRIP;
+  trace_user_only = false;
 }
 
 template <>
@@ -268,6 +277,14 @@ void ConfigurationParser<PTLsimConfig>::setup() {
   add(log_user_only,                "log-user-only",        "Only log the user mode activities");
   add(dump_config_filename,			    "dump-config-file",		  "Dump Simulated Machine Configuration into Specified file instead of log file");
   add(logMemory,                    "logMemory",            "Log the Memory system");
+
+  section("Instruction trace");
+  add(trace_file, "tracefile", "Dump executed instruction trace to this file");
+  add(trace_print_uop, "print-uop", "Print uop info");
+  add(trace_print_mop, "print-mop", "Print micro opcode info");
+  add(start_trace_at_iteration,       "starttrace",             "Start tracing after iteration <starttrace>");
+  add(start_trace_at_rip,             "starttracerip",          "Start tracing after first translation of basic block starting at rip");
+  add(trace_user_only,                "trace-user-only",        "Only trace the user mode activities");
 
   section("Statistics Database");
   add(stats_filename,               "stats",                "Statistics data store hierarchy root");
@@ -432,6 +449,7 @@ void backup_and_reopen_yamlstats() {
   }
 }
 
+// Nobody calls this function :D. Maybe deprecated.
 void force_logging_enabled() {
   logenable = 1;
   config.start_log_at_iteration = 0;
@@ -599,6 +617,14 @@ bool handle_config_change(PTLsimConfig& config) {
   } else if (config.start_log_at_iteration != infinity) {
     config.start_log_at_rip = INVALIDRIP;
     logenable = 0;
+  }
+
+  if (config.start_trace_at_rip != INVALIDRIP) {
+    config.start_trace_at_iteration = infinity;
+    traceenable = 0;
+  } else if (config.start_trace_at_iteration != infinity) {
+    config.start_trace_at_rip = INVALIDRIP;
+    traceenable = 0;
   }
 
   if (config.bbcache_dump_filename.set() && (config.bbcache_dump_filename != current_bbcache_dump_filename)) {

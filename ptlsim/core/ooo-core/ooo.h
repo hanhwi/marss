@@ -23,6 +23,8 @@
 #include <ooo-const.h>
 #include <ooo-stats.h>
 
+#include <tracer.h>
+
 /* With these disabled, simulation is faster */
 #define ENABLE_CHECKS
 #define ENABLE_LOGGING
@@ -1091,6 +1093,9 @@ namespace OOO_CORE_MODEL {
 
         // Stats
         OooCoreThreadStats thread_stats;
+
+        // Trace
+        InstTracer tracer;
     };
 
     //  class MemoryHierarchy;

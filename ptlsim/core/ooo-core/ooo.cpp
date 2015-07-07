@@ -112,7 +112,7 @@ static void init_luts() {
 
 ThreadContext::ThreadContext(OooCore& core_, W8 threadid_, Context& ctx_)
     : core(core_), threadid(threadid_), ctx(ctx_)
-      , thread_stats("thread", &core_)
+    , thread_stats("thread", &core_)
 {
     stringbuf stats_name;
     stats_name << "thread" << threadid;
@@ -133,6 +133,15 @@ ThreadContext::ThreadContext(OooCore& core_, W8 threadid_, Context& ctx_)
     /* thread_stats.commit.ipc.enable_periodic_dump(); */
 
     thread_stats.set_default_stats(user_stats);
+
+    if (config.trace_file != ""){
+        stringbuf tracer_name;
+        tracer_name << "tracer" << "_c" << core.get_coreid() << "_t" << threadid;
+        stringbuf trace_filename;
+        trace_filename << config.trace_file << "_c" << core.get_coreid() << "_t" << threadid << ".trace";
+        tracer.init((char *) tracer_name, (char *) trace_filename);
+    }
+    
     reset();
 }
 

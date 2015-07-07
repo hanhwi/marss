@@ -696,6 +696,7 @@ int ReorderBufferEntry::issue() {
                 thread.annul_fetchq();
                 annul_after();
 
+
                 /*
                  * The fetch queue is reset and fetching is redirected to the
                  * correct branch direction.
@@ -705,6 +706,9 @@ int ReorderBufferEntry::issue() {
                  * it has already been issued once. Just let it writeback and
                  * commit like it was predicted perfectly in the first place.
                  */
+
+                // Mark all trace entries starting from the misprediced branched.
+                thread.tracer.invalidate_from(uop.trace_entry);
 
                 if(logable(10))
                     ptl_logfile << "Branch mispredicted: ", (void*)(realrip), " ", *this, endl;

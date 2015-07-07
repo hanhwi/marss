@@ -1573,7 +1573,11 @@ struct TransOpBase {
   W64 ripseq;
 };
 
+class TraceEntry;
 struct TransOp: public TransOpBase {
+  // Tracing purpose
+  TraceEntry *trace_entry;
+
   TransOp() { }
 
   TransOp(int opcode, int rd, int ra, int rb, int rc, int size, W64s rbimm = 0, W64s rcimm = 0, W32 setflags = 0, int memid = 0) {
@@ -1581,7 +1585,7 @@ struct TransOp: public TransOpBase {
   }
 
   void init(int opcode, int rd, int ra, int rb, int rc, int size, W64s rbimm = 0, W64s rcimm = 0, W32 setflags = 0, int memid = 0)  {
-    setzero(*this);
+    setzero(*(TransOpBase *)this);
     this->opcode = opcode;
     this->rd = rd;
     this->ra = ra;
@@ -1706,6 +1710,7 @@ struct BasicBlockBase {
   W64 lastused;
   W64 lasttarget;
   W16 context_id;
+  std::map<W64, std::string> *disasms;
 
   void acquire() {
     refcount++;
@@ -1719,6 +1724,7 @@ struct BasicBlockBase {
 };
 
 struct BasicBlock: public BasicBlockBase {
+
   TransOp transops[MAX_BB_UOPS*2];
 
   void reset();

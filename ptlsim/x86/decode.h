@@ -9,9 +9,12 @@
 #ifndef _DECODE_H_
 #define _DECODE_H_
 
+
 #include <globals.h>
 #include <ptlsim.h>
 #include <ptl-qemu.h>
+#include <disasm.h>
+
 
 // This macro is used to call helper functions in QEMU
 // It calls the context setup function before and after
@@ -222,6 +225,10 @@ struct TraceDecoder {
   bool no_partial_flag_updates_per_insn;
   bool fast_length_decode_only;
   W64 stop_at_rip;
+
+  // Disassembler context
+  Disasm disasm;
+  std::map<W64, std::string> disasm_cache;
 
   TraceDecoder(const RIPVirtPhys& rvp);
   TraceDecoder(Context& ctx, Waddr rip);

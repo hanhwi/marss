@@ -743,6 +743,13 @@ void Context::update_mode(bool is_kernel) {
         else
             logenable = 1;
     }
+
+    if(config.trace_user_only) {
+        if(kernel_mode)
+            traceenable = 0;
+        else
+            traceenable = 1;
+    }
 }
 
 

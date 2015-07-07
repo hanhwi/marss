@@ -4,7 +4,6 @@
 //
 // Copyright 1999-2008 Matt T. Yourst <yourst@yourst.com>
 //
-
 #include <globals.h>
 #include <ptlsim.h>
 #include <decode.h>
@@ -2135,6 +2134,8 @@ int TraceDecoder::fillbuf(Context& ctx, byte* insnbytes, int insnbytes_bufsize) 
     pfec = 0;
     invalid = 0;
     valid_byte_count = ctx.copy_from_vm(insnbytes, bb.rip, insnbytes_bufsize, pfec, faultaddr, true);
+
+    disasm.init(bb.rip, insnbytes, insnbytes_bufsize);
     return valid_byte_count;
 }
 
@@ -2277,6 +2278,8 @@ bool TraceDecoder::translate() {
     if (!rc) return rc;
 
     user_insn_count++;
+    
+    disasm_cache[ripstart] = disasm.disasm(ripstart);
 
     assert(!invalid);
 
@@ -2335,6 +2338,13 @@ BasicBlock* BasicBlockCache::translate(Context& ctx, const RIPVirtPhys& rvp) {
         logenable = 1;
     }
 
+    if unlikely (!traceenable && (rvp.rip == config.start_trace_at_rip) && (rvp.rip != 0xffffffffffffffffULL)) {
+        config.start_trace_at_iteration = 0;
+        if (config.trace_file != "") // need to change
+            cerr << "Start tracing at 0x" << std::hex << config.start_trace_at_rip << std::dec << endl;
+        traceenable = 1;
+    }
+
     /*
        if unlikely (smc_isdirty(rvp.mfnlo)) {
        if (logable(5) | log_code_page_ops) ptl_logfile << "Pre-invalidate low mfn for ", rvp, endl;
@@ -2387,6 +2397,8 @@ BasicBlock* BasicBlockCache::translate(Context& ctx, const RIPVirtPhys& rvp) {
     trans.bb.hitcount = 0;
     trans.bb.predcount = 0;
     bb = trans.bb.clone();
+    bb->disasms = new map<W64, std::string>(trans.disasm_cache);
+
     //
     // Acquire a reference to the new basic block right away,
     // since we make allocations below that might reclaim it
@@ -2473,6 +2485,13 @@ void BasicBlockCache::translate_in_place(BasicBlock& targetbb, Context& ctx, Wad
         logenable = 1;
     }
 
+    if unlikely (!traceenable && (rip == config.start_trace_at_rip) && (rip != 0xffffffffffffffffULL)) {
+        config.start_trace_at_iteration = 0;
+        if (config.trace_file != "") // need to change
+            cerr << "Start tracing at 0x" << std::hex << config.start_trace_at_rip << std::dec << endl;
+        traceenable = 1;
+    }
+
     RIPVirtPhys rvp = rip;
     rvp.update(ctx);
 
@@ -2506,6 +2525,13 @@ BasicBlock* BasicBlockCache::translate_and_clone(Context& ctx, Waddr rip) {
     if unlikely ((rip == config.start_log_at_rip) && (rip != 0xffffffffffffffffULL)) {
         config.start_log_at_iteration = 0;
         logenable = 1;
+    }
+
+    if unlikely (!traceenable && (rip == config.start_trace_at_rip) && (rip != 0xffffffffffffffffULL)) {
+        config.start_trace_at_iteration = 0;
+        if (config.trace_file != "") // need to change
+            cerr << "Start tracing at 0x" << std::hex << config.start_trace_at_rip << std::dec << endl;
+        traceenable = 1;
     }
 
     RIPVirtPhys rvp = rip;
@@ -2589,3 +2615,4 @@ void set_decoder_stats(Statable *parent, int cpuid)
     decoder_stats[cpuid] = stat;
     stat->set_default_stats(global_stats);
 }
+

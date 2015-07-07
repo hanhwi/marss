@@ -498,6 +498,8 @@ void BasicBlock::reset(const RIPVirtPhys& rip) {
 void BasicBlock::free() {
   if (synthops) delete[] synthops;
   synthops = NULL;
+  if (disasms) delete disasms;
+
   ::free(this);
 }
 

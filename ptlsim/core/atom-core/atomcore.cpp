@@ -1884,6 +1884,13 @@ bool AtomThread::fetch()
             logenable = 1;
         }
 
+        if unlikely (!traceenable && (fetchrip.rip == config.start_trace_at_rip) &&
+                (fetchrip.rip != 0xffffffffffffffffULL)) {
+            config.start_trace_at_iteration = 0;
+            cerr << "Start tracing at 0x" << std::hex << config.start_trace_at_rip << std::dec << endl;
+            traceenable = 1;
+        }
+
         // Check current basic-block
         if unlikely (!fetch_check_current_bb()) {
             break;

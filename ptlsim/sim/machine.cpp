@@ -217,6 +217,16 @@ int BaseMachine::run(PTLsimConfig& config)
         logenable = 1;
     }
 
+    if unlikely (!traceenable && config.start_trace_at_iteration &&
+            iterations >= config.start_trace_at_iteration &&
+            !config.trace_user_only) {
+
+            if (config.trace_file != "") // need to change
+                cerr << "Start tracing in cycle ", iterations, endl, flush;
+
+            traceenable = 1;
+    }
+
     // reset all cores for fresh start:
     foreach (cur_core, cores.count()){
         if(first_run) {
@@ -236,6 +246,14 @@ int BaseMachine::run(PTLsimConfig& config)
             ptl_logfile << "Start logging at level ", config.loglevel,
                         " in cycle ", iterations, endl, flush;
             logenable = 1;
+        }
+
+        if unlikely ((!traceenable) &&
+                iterations >= config.start_trace_at_iteration &&
+                !config.trace_user_only) {
+                if (config.trace_file != "") // need to change
+                    cerr << "Start tracing in cycle ", iterations, endl, flush;
+            traceenable = 1;
         }
 
         if(sim_cycle % 1000 == 0)
