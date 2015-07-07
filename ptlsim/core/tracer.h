@@ -15,8 +15,8 @@ extern const OpcodeInfo opinfo[OP_MAX_OPCODE];
 // Control global parameter
 // Need to be improved
 // bool traceenable
-// bool config.trace_print_uop
-// bool config.trace_print_mop
+// bool config.trace_no_print_uop
+// bool config.trace_no_print_mop
 
 class InstTracer;
 
@@ -43,15 +43,15 @@ public:
         os << std::dec;
     }
     virtual void dump_uop(ostream &os){
-        static const char *indent = config.trace_print_mop ? "    " : "";
+        static const char *indent = config.trace_no_print_mop ? "" : "    ";
         os << indent << (valid ? "" : "!") << opinfo[opcode].name << '\n';
     }
 
     void dump(ostream &os){
-        if (config.trace_print_mop && som)
+        if (!config.trace_no_print_mop && som)
             dump_mop(os);
 
-        if (config.trace_print_uop)
+        if (!config.trace_no_print_uop)
             dump_uop(os);
     }
 };

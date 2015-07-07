@@ -219,8 +219,8 @@ struct PTLsimConfig {
 
   // Instruction trace options
   stringbuf trace_file;
-  bool trace_print_uop;
-  bool trace_print_mop;
+  bool trace_no_print_uop;
+  bool trace_no_print_mop;
   W64 start_trace_at_iteration;
   W64 start_trace_at_rip;
   bool trace_user_only;

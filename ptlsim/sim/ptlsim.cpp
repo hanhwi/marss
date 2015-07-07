@@ -244,8 +244,8 @@ void ConfigurationParser<PTLsimConfig>::reset() {
 
   // Trace 
   trace_file = "";
-  trace_print_uop = true;
-  trace_print_mop = true;
+  trace_no_print_uop = false;
+  trace_no_print_mop = false;
   start_trace_at_iteration = 0;
   start_trace_at_rip = INVALIDRIP;
   trace_user_only = false;
@@ -280,8 +280,8 @@ void ConfigurationParser<PTLsimConfig>::setup() {
 
   section("Instruction trace");
   add(trace_file, "tracefile", "Dump executed instruction trace to this file");
-  add(trace_print_uop, "print-uop", "Print uop info");
-  add(trace_print_mop, "print-mop", "Print micro opcode info");
+  add(trace_no_print_uop, "no-print-uop", "Do not print uop info");
+  add(trace_no_print_mop, "no-print-mop", "Do not micro opcode info");
   add(start_trace_at_iteration,       "starttrace",             "Start tracing after iteration <starttrace>");
   add(start_trace_at_rip,             "starttracerip",          "Start tracing after first translation of basic block starting at rip");
   add(trace_user_only,                "trace-user-only",        "Only trace the user mode activities");
